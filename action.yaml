@@ -1,5 +1,5 @@
 name: "Generate Changelog"
-description: "Fetch merged PRs between two tags, extract ```release-note``` blocks and bucket by /kind labels"
+description: "Fetch merged PRs between two commits, extract ```release-note``` blocks and bucket by /kind labels"
 inputs:
   github-token:
     description: "GitHub token (usually ${{ secrets.GITHUB_TOKEN }})"
@@ -10,11 +10,11 @@ inputs:
   repo:
     description: "Repo name"
     required: true
-  from-tag:
-    description: "The previous semver tag (exclusive)"
+  start-sha:
+    description: "The starting commit SHA (exclusive)"
     required: true
-  to-tag:
-    description: "The current semver tag (inclusive)"
+  end-sha:
+    description: "The ending commit SHA (inclusive)"
     required: true
 runs:
   using: "docker"
@@ -23,5 +23,5 @@ runs:
     - ${{ inputs.github-token }}
     - ${{ inputs.owner }}
     - ${{ inputs.repo }}
-    - ${{ inputs.from-tag }}
-    - ${{ inputs.to-tag }}
+    - ${{ inputs.start-sha }}
+    - ${{ inputs.end-sha }}

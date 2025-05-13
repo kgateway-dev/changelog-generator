@@ -57,11 +57,11 @@ func TestGenerateChangelog_Mocked(t *testing.T) {
 		mock.WithRequestMatch(
 			mock.GetReposPullsByOwnerByRepoByPullNumber,
 			github.PullRequest{
-				Number: github.Int(42),
-				Title:  github.String("Add new feature"),
-				Body:   github.String("```release-note\nMy note for PR42\n```"),
+				Number: github.Ptr(42),
+				Title:  github.Ptr("Add new feature"),
+				Body:   github.Ptr("```release-note\nMy note for PR42\n```"),
 				Labels: []*github.Label{
-					{Name: github.String("kind/new-feature")},
+					{Name: github.Ptr("kind/new-feature")},
 				},
 			},
 		),

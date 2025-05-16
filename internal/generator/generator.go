@@ -133,7 +133,7 @@ func (g *Generator) getPRKind(pr *github.PullRequest) string {
 			return "new_feature"
 		case "kind/bug":
 			return "bug_fix"
-		case "kind/breaking-change":
+		case "kind/breaking_change":
 			return "breaking_change"
 		case "kind/documentation":
 			return "documentation"

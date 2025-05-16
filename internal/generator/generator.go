@@ -149,9 +149,9 @@ func (g *Generator) getPRKind(pr *github.PullRequest) string {
 	// Check labels first
 	for _, label := range pr.Labels {
 		switch *label.Name {
-		case "kind/new-feature":
+		case "kind/feature", "kind/new-feature":
 			return "new_feature"
-		case "kind/bug":
+		case "kind/fix", "kind/bug_fix":
 			return "bug_fix"
 		case "kind/breaking_change":
 			return "breaking_change"

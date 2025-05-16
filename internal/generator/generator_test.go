@@ -1,4 +1,4 @@
-package changelog_test
+package generator_test
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/go-github/v68/github"
 	"github.com/gorilla/mux"
-	"github.com/kgateway-dev/changelog-generator/internal/changelog"
+	"github.com/kgateway-dev/changelog-generator/internal/generator"
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 )
 

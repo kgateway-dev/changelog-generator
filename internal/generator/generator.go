@@ -77,7 +77,7 @@ func (g *Generator) getReferencedPRs(ctx context.Context, _ []*github.Commit) ([
 	var prs []*github.PullRequest
 
 	// Search for PRs referenced in commit messages
-	query := fmt.Sprintf("repo:%s/%s is:pr is:merged", g.owner, g.repo)
+	query := fmt.Sprintf("repo:%s/%s is:pr is:merged label:release-note", g.owner, g.repo)
 	result, _, err := g.client.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 		ListOptions: github.ListOptions{

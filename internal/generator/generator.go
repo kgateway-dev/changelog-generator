@@ -28,8 +28,8 @@ type Generator struct {
 	repo   string
 }
 
-// NewGenerator creates a new changelog generator
-func NewGenerator(client *github.Client, owner, repo string) *Generator {
+// New creates a new changelog generator
+func New(client *github.Client, owner, repo string) *Generator {
 	return &Generator{
 		client: client,
 		owner:  owner,

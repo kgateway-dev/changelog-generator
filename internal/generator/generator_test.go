@@ -71,7 +71,7 @@ func TestGenerateChangelog_Mocked(t *testing.T) {
 	ghClient := github.NewClient(mockedHTTPClient)
 
 	// Create changelog generator
-	generator := changelog.NewGenerator(ghClient, "foo", "bar")
+	generator := generator.New(ghClient, "foo", "bar")
 
 	// Generate changelog
 	changelog, err := generator.Generate(context.Background(), "start-sha", "end-sha")

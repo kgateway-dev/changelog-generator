@@ -21,7 +21,7 @@ func main() {
 			ctx := context.Background()
 			client := github.NewClient(nil).WithAuthToken(token)
 
-			g := generator.NewGenerator(client, owner, repo)
+			g := generator.New(client, owner, repo)
 			changelog, err := g.Generate(ctx, startSHA, endSHA)
 			if err != nil {
 				return fmt.Errorf("failed to generate changelog: %v", err)

@@ -119,7 +119,25 @@ func (g *Generator) generateChangelog(prs []*github.PullRequest) string {
 		}
 		changelog.WriteString(fmt.Sprintf("\n## %s\n\n", header))
 		for _, pr := range prs {
-			changelog.WriteString(fmt.Sprintf("- %s (#%d)\n", *pr.Title, *pr.Number))
+			body := pr.GetBody()
+			if body == "" {
+				continue
+			}
+			// attempt to extract a release-note from the PR body
+			match := releaseNoteRE.FindStringSubmatch(body)
+			if len(match) < 2 {
+				// skip PRs that have the release-note label but no release-note body.
+				// TODO(tim): this shouldn't be possible with the labeler being a required
+				// check, but we'll check for it anyway in case users have manually added
+				// the label to a PR.
+				continue
+			}
+			note := match[1]
+			if note == "" {
+				// TODO(tim): we should probably log this as an error as this is unexpected
+				continue
+			}
+			changelog.WriteString(fmt.Sprintf("- %s (#%d)\n", note, pr.GetNumber()))
 		}
 	}
 

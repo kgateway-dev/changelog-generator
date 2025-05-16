@@ -1,4 +1,4 @@
-package main
+package changelog_test
 
 import (
 	"context"

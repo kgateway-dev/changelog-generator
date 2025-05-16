@@ -113,11 +113,13 @@ func (g *Generator) generateChangelog(prs []*github.PullRequest) string {
 
 	// Print each bucket
 	for kind, header := range kindHeaders {
-		if prs, ok := buckets[kind]; ok && len(prs) > 0 {
-			changelog.WriteString(fmt.Sprintf("\n## %s\n\n", header))
-			for _, pr := range prs {
-				changelog.WriteString(fmt.Sprintf("- %s (#%d)\n", *pr.Title, *pr.Number))
-			}
+		prs := buckets[kind]
+		if len(prs) == 0 {
+			continue
+		}
+		changelog.WriteString(fmt.Sprintf("\n## %s\n\n", header))
+		for _, pr := range prs {
+			changelog.WriteString(fmt.Sprintf("- %s (#%d)\n", *pr.Title, *pr.Number))
 		}
 	}
 

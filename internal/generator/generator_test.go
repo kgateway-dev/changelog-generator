@@ -90,6 +90,7 @@ func TestGenerateChangelog(t *testing.T) {
 			issuesForSearch: []*github.Issue{
 				{Number: github.Ptr(42)},
 				{Number: github.Ptr(43)},
+				{Number: github.Ptr(44)},
 			},
 			pullRequests: []*github.PullRequest{
 				{
@@ -108,6 +109,14 @@ func TestGenerateChangelog(t *testing.T) {
 						Name: github.Ptr("kind/bug"),
 					}},
 				},
+				{
+					Number: github.Ptr(44),
+					Title:  github.Ptr("Remove old feature"),
+					Body:   github.Ptr("```release-note\\nRemoved old feature\\n```"),
+					Labels: []*github.Label{{
+						Name: github.Ptr("kind/breaking_change"),
+					}},
+				},
 			},
 			expectedChangelog: `
 ## 🚀 Features
@@ -117,7 +126,11 @@ func TestGenerateChangelog(t *testing.T) {
 ## 🐛 Bug Fixes
 
 - Fix bug (#43)
-			`,
+
+## 💥 Breaking Changes
+
+- Remove old feature (#44)
+`,
 			expectError: false,
 		},
 	}

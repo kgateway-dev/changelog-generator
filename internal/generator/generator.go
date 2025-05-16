@@ -144,20 +144,5 @@ func (g *Generator) getPRKind(pr *github.PullRequest) string {
 		}
 	}
 
-	// Fall back to title-based detection
-	title := strings.ToLower(*pr.Title)
-	switch {
-	case strings.Contains(title, "feat") || strings.Contains(title, "feature"):
-		return "new_feature"
-	case strings.Contains(title, "fix") || strings.Contains(title, "bug"):
-		return "bug_fix"
-	case strings.Contains(title, "break") || strings.Contains(title, "breaking"):
-		return "breaking_change"
-	case strings.Contains(title, "doc") || strings.Contains(title, "docs"):
-		return "documentation"
-	case strings.Contains(title, "perf") || strings.Contains(title, "performance"):
-		return "performance"
-	default:
-		return "other"
-	}
+	return "other"
 }

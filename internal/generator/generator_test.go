@@ -98,7 +98,7 @@ func TestGenerateChangelog(t *testing.T) {
 					Title:  github.Ptr("Add new feature"),
 					Body:   github.Ptr("```release-note\\ASDF\\n```"),
 					Labels: []*github.Label{{
-						Name: github.Ptr("kind/"),
+						Name: github.Ptr("kind/new-feature"),
 					}},
 				},
 				{

@@ -79,6 +79,47 @@ func TestGenerateChangelog(t *testing.T) {
 			expectedChangelog: "",
 			expectError:       false,
 		},
+		{
+			name:         "Valid/Multiple PRs with different kinds",
+			owner:        "foo",
+			repo:         "bar",
+			startSHA:     "start-sha",
+			startSHADate: time.Date(2025, 4, 1, 12, 0, 0, 0, time.UTC),
+			endSHA:       "end-sha",
+			endSHADate:   time.Date(2025, 5, 1, 12, 0, 0, 0, time.UTC),
+			issuesForSearch: []*github.Issue{
+				{Number: github.Ptr(42)},
+				{Number: github.Ptr(43)},
+			},
+			pullRequests: []*github.PullRequest{
+				{
+					Number: github.Ptr(42),
+					Title:  github.Ptr("Add new feature"),
+					Body:   github.Ptr("```release-note\\ASDF\\n```"),
+					Labels: []*github.Label{{
+						Name: github.Ptr("kind/"),
+					}},
+				},
+				{
+					Number: github.Ptr(43),
+					Title:  github.Ptr("Fix bug"),
+					Body:   github.Ptr("```release-note\\nFixed a bug\\n```"),
+					Labels: []*github.Label{{
+						Name: github.Ptr("kind/bug"),
+					}},
+				},
+			},
+			expectedChangelog: `
+## 🚀 Features
+
+- Add new feature (#42)
+
+## 🐛 Bug Fixes
+
+- Fix bug (#43)
+			`,
+			expectError: false,
+		},
 	}
 
 	for _, tc := range tt {
@@ -101,7 +142,7 @@ func TestGenerateChangelog(t *testing.T) {
 				t.Fatalf("Expected no error, but got: %v", err)
 			default:
 				if strings.TrimSpace(changelog) != strings.TrimSpace(tc.expectedChangelog) {
-					t.Fatalf("Generated changelog does not match expected changelog:\\nWant:\\n%s\\nGot:\\n%s", tc.expectedChangelog, changelog)
+					t.Fatalf("Generated changelog does not match expected changelog:\nwant: %s\ngot: %s", tc.expectedChangelog, changelog)
 				}
 			}
 		})

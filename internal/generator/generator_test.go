@@ -15,78 +15,150 @@ import (
 	"github.com/migueleliasweb/go-github-mock/src/mock"
 )
 
-// TestGenerateChangelog_Mocked tests the changelog-generator logic
+// TestGenerateChangelog tests the changelog-generator logic
 // by mocking GitHub API calls via go-github-mock.
-func TestGenerateChangelog_Mocked(t *testing.T) {
-	// Prepare mock transport
-	mockedHTTPClient := mock.NewMockedHTTPClient(
-		// 1. Mock Git.GetCommit for startSHA
-		mock.WithRequestMatchHandler(
-			mock.GetReposGitCommitsByOwnerByRepoByCommitSha,
-			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				vars := mux.Vars(r)
-				if vars["commit_sha"] == "start-sha" {
-					json.NewEncoder(w).Encode(github.Commit{
-						Committer: &github.CommitAuthor{
-							Date: &github.Timestamp{Time: time.Date(2025, 4, 1, 12, 0, 0, 0, time.UTC)},
-						},
-					})
-					return
-				}
-				if vars["commit_sha"] == "end-sha" {
-					json.NewEncoder(w).Encode(github.Commit{
-						Committer: &github.CommitAuthor{
-							Date: &github.Timestamp{Time: time.Date(2025, 5, 1, 12, 0, 0, 0, time.UTC)},
-						},
-					})
-					return
-				}
-				w.WriteHeader(http.StatusNotFound)
-			}),
-		),
-		// 3. Mock Search.Issues for merged PRs
-		mock.WithRequestMatch(
-			mock.GetSearchIssues,
-			github.IssuesSearchResult{
-				Issues: []*github.Issue{
-					{Number: github.Int(42)},
-				},
+func TestGenerateChangelog(t *testing.T) {
+	tt := []struct {
+		name              string
+		owner             string
+		repo              string
+		startSHA          string
+		startSHADate      time.Time
+		endSHA            string
+		endSHADate        time.Time
+		issuesForSearch   []*github.Issue
+		pullRequests      []*github.PullRequest
+		expectedChangelog string
+		expectError       bool
+	}{
+		{
+			name:         "Valid/Feature PR with release-note",
+			owner:        "foo",
+			repo:         "bar",
+			startSHA:     "start-sha",
+			startSHADate: time.Date(2025, 4, 1, 12, 0, 0, 0, time.UTC),
+			endSHA:       "end-sha",
+			endSHADate:   time.Date(2025, 5, 1, 12, 0, 0, 0, time.UTC),
+			issuesForSearch: []*github.Issue{
+				{Number: github.Ptr(42)},
 			},
-		),
-		// 4. Mock PullRequests.Get for PR #42
-		mock.WithRequestMatch(
-			mock.GetReposPullsByOwnerByRepoByPullNumber,
-			github.PullRequest{
+			pullRequests: []*github.PullRequest{{
 				Number: github.Ptr(42),
 				Title:  github.Ptr("Add new feature"),
-				Body:   github.Ptr("```release-note\nMy note for PR42\n```"),
-				Labels: []*github.Label{
-					{Name: github.Ptr("kind/new-feature")},
-				},
+				Body:   github.Ptr("```release-note\\nMy note for PR42\\n```"),
+				Labels: []*github.Label{{
+					Name: github.Ptr("kind/new-feature"),
+				}},
+			}},
+			expectedChangelog: `
+## 🚀 Features
+
+- Add new feature (#42)
+`,
+			expectError: false,
+		},
+		{
+			name:         "Valid/No PRs with release-note content",
+			owner:        "foo",
+			repo:         "bar",
+			startSHA:     "start-sha",
+			startSHADate: time.Date(2025, 4, 1, 12, 0, 0, 0, time.UTC),
+			endSHA:       "end-sha",
+			endSHADate:   time.Date(2025, 5, 1, 12, 0, 0, 0, time.UTC),
+			issuesForSearch: []*github.Issue{
+				{Number: github.Ptr(43)},
 			},
-		),
+			pullRequests: []*github.PullRequest{{
+				Number: github.Ptr(43),
+				Title:  github.Ptr("Refactor code"),
+				Body:   github.Ptr("No release note here."),
+				Labels: []*github.Label{{
+					Name: github.Ptr("irrelevant-label"),
+				}},
+			}},
+			expectedChangelog: "",
+			expectError:       false,
+		},
+	}
+
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			currentMockHandlers := []mock.MockBackendOption{
+				mockGetCommitHandler(tc.startSHA, tc.startSHADate, tc.endSHA, tc.endSHADate),
+				mockSearchIssuesHandler(tc.issuesForSearch),
+			}
+			if len(tc.pullRequests) > 0 {
+				currentMockHandlers = append(currentMockHandlers, mockGetPullRequestsHandler(tc.pullRequests))
+			}
+			mockedHTTPClient := mock.NewMockedHTTPClient(currentMockHandlers...)
+
+			g := generator.New(github.NewClient(mockedHTTPClient), tc.owner, tc.repo)
+			changelog, err := g.Generate(context.Background(), tc.startSHA, tc.endSHA)
+			switch {
+			case tc.expectError && err == nil:
+				t.Fatalf("Expected an error, but got nil")
+			case !tc.expectError && err != nil:
+				t.Fatalf("Expected no error, but got: %v", err)
+			default:
+				if strings.TrimSpace(changelog) != strings.TrimSpace(tc.expectedChangelog) {
+					t.Fatalf("Generated changelog does not match expected changelog:\\nWant:\\n%s\\nGot:\\n%s", tc.expectedChangelog, changelog)
+				}
+			}
+		})
+	}
+}
+
+// mockGetCommitHandler creates a mock handler for the GetCommit API call.
+func mockGetCommitHandler(startSHA string, startDate time.Time, endSHA string, endDate time.Time) mock.MockBackendOption {
+	return mock.WithRequestMatchHandler(
+		mock.GetReposGitCommitsByOwnerByRepoByCommitSha,
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			vars := mux.Vars(r)
+			commitSHA := vars["commit_sha"]
+			var commitDate time.Time
+			switch commitSHA {
+			case startSHA:
+				commitDate = startDate
+			case endSHA:
+				commitDate = endDate
+			default:
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			json.NewEncoder(w).Encode(github.Commit{
+				Committer: &github.CommitAuthor{
+					Date: &github.Timestamp{Time: commitDate},
+				},
+			})
+		}),
 	)
+}
 
-	// Create GitHub client with mock transport
-	ghClient := github.NewClient(mockedHTTPClient)
+// mockSearchIssuesHandler creates a mock handler for the SearchIssues API call.
+func mockSearchIssuesHandler(issues []*github.Issue) mock.MockBackendOption {
+	return mock.WithRequestMatch(
+		mock.GetSearchIssues,
+		github.IssuesSearchResult{
+			Issues: issues,
+		},
+	)
+}
 
-	// Create changelog generator
-	generator := generator.New(ghClient, "foo", "bar")
-
-	// Generate changelog
-	changelog, err := generator.Generate(context.Background(), "start-sha", "end-sha")
-	if err != nil {
-		t.Fatalf("Generate failed: %v", err)
-	}
-
-	// Debug output
-	fmt.Printf("Generated changelog:\n%s\n", changelog)
-
-	// Verify changelog content
-	if !strings.Contains(changelog, "🚀 Features") {
-		t.Error("changelog missing Features section")
-	}
-	if !strings.Contains(changelog, "#42") {
-		t.Error("changelog missing PR #42")
-	}
+// mockGetPullRequestsHandler creates a mock handler for GetPullRequests API calls.
+// It mocks responses for each PR in the provided slice based on its number.
+func mockGetPullRequestsHandler(prs []*github.PullRequest) mock.MockBackendOption {
+	return mock.WithRequestMatchHandler(
+		mock.GetReposPullsByOwnerByRepoByPullNumber,
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			vars := mux.Vars(r)
+			prNumberStr := vars["pull_number"]
+			for _, pr := range prs {
+				if pr.Number != nil && fmt.Sprintf("%d", *pr.Number) == prNumberStr {
+					json.NewEncoder(w).Encode(pr)
+					return
+				}
+			}
+			w.WriteHeader(http.StatusNotFound)
+		}),
+	)
 }

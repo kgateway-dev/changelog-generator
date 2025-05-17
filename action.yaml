@@ -20,7 +20,7 @@ inputs:
   output-path:
     description: "The path to write the changelog to"
     required: false
-    default: "CHANGELOG.md"
+    default: "/tmp/CHANGELOG.md"
 outputs:
   changelog-path:
     description: "The path to the generated changelog file"

@@ -4,7 +4,7 @@ inputs:
   token:
     description: "GITHUB_TOKEN or a `repo` scoped Personal Access Token (PAT)"
     required: false
-    default: {{ github.token }}
+    default: ${{ github.token }}
   owner:
     description: "Repo owner/org"
     required: true

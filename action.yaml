@@ -1,9 +1,10 @@
 name: "Generate Changelog"
 description: "Fetch merged PRs between two commits, extract ```release-note``` blocks and bucket by /kind labels"
 inputs:
-  github-token:
+  token:
     description: "GitHub token (usually ${{ secrets.GITHUB_TOKEN }})"
-    required: true
+    required: false
+    default: {{ github.token }}
   owner:
     description: "Repo owner/org"
     required: true
@@ -20,7 +21,7 @@ runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - ${{ inputs.github-token }}
+    - ${{ inputs.token }}
     - ${{ inputs.owner }}
     - ${{ inputs.repo }}
     - ${{ inputs.start-sha }}

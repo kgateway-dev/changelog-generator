@@ -45,15 +45,15 @@ func TestGenerateChangelog(t *testing.T) {
 			pullRequests: []*github.PullRequest{{
 				Number: github.Ptr(42),
 				Title:  github.Ptr("Add new feature"),
-				Body:   github.Ptr("```release-note\\nMy note for PR42\\n```"),
+				Body:   github.Ptr("```release-note\nMy note for PR42\n```"),
 				Labels: []*github.Label{{
-					Name: github.Ptr("kind/new-feature"),
+					Name: github.Ptr("kind/feature"),
 				}},
 			}},
 			expectedChangelog: `
 ## 🚀 Features
 
-- Add new feature (#42)
+- My note for PR42 (#42)
 `,
 			expectError: false,
 		},
@@ -96,23 +96,23 @@ func TestGenerateChangelog(t *testing.T) {
 				{
 					Number: github.Ptr(42),
 					Title:  github.Ptr("Add new feature"),
-					Body:   github.Ptr("```release-note\\ASDF\\n```"),
+					Body:   github.Ptr("```release-note\nImplement new feature\n```"),
 					Labels: []*github.Label{{
-						Name: github.Ptr("kind/new-feature"),
+						Name: github.Ptr("kind/feature"),
 					}},
 				},
 				{
 					Number: github.Ptr(43),
 					Title:  github.Ptr("Fix bug"),
-					Body:   github.Ptr("```release-note\\nFixed a bug\\n```"),
+					Body:   github.Ptr("```release-note\nFixed a bug\n```"),
 					Labels: []*github.Label{{
-						Name: github.Ptr("kind/bug"),
+						Name: github.Ptr("kind/fix"),
 					}},
 				},
 				{
 					Number: github.Ptr(44),
 					Title:  github.Ptr("Remove old feature"),
-					Body:   github.Ptr("```release-note\\nRemoved old feature\\n```"),
+					Body:   github.Ptr("```release-note\nRemoved old feature\n```"),
 					Labels: []*github.Label{{
 						Name: github.Ptr("kind/breaking_change"),
 					}},
@@ -121,15 +121,15 @@ func TestGenerateChangelog(t *testing.T) {
 			expectedChangelog: `
 ## 🚀 Features
 
-- Add new feature (#42)
+- Implement new feature (#42)
 
 ## 🐛 Bug Fixes
 
-- Fix bug (#43)
+- Fixed a bug (#43)
 
 ## 💥 Breaking Changes
 
-- Remove old feature (#44)
+- Removed old feature (#44)
 `,
 			expectError: false,
 		},

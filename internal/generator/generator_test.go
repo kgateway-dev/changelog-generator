@@ -119,17 +119,17 @@ func TestGenerateChangelog(t *testing.T) {
 				},
 			},
 			expectedChangelog: `
-## 🚀 Features
+## 💥 Breaking Changes
 
-- Implement new feature (#42)
+- Removed old feature (#44)
 
 ## 🐛 Bug Fixes
 
 - Fixed a bug (#43)
 
-## 💥 Breaking Changes
+## 🚀 Features
 
-- Removed old feature (#44)
+- Implement new feature (#42)
 `,
 			expectError: false,
 		},

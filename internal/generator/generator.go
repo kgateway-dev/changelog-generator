@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/google/go-github/v68/github"
@@ -110,9 +111,16 @@ func (g *Generator) generateChangelog(prs []*github.PullRequest) string {
 		kind := g.getPRKind(pr)
 		buckets[kind] = append(buckets[kind], pr)
 	}
+	// sort the buckets by kind to ensure deterministic output
+	kinds := make([]string, 0, len(kindHeaders))
+	for kind := range kindHeaders {
+		kinds = append(kinds, kind)
+	}
+	sort.Strings(kinds)
 
-	// Print each bucket
-	for kind, header := range kindHeaders {
+	// build the changelog
+	for _, kind := range kinds {
+		header := kindHeaders[kind]
 		prs := buckets[kind]
 		if len(prs) == 0 {
 			continue

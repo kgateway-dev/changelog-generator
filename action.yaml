@@ -2,7 +2,7 @@ name: "Generate Changelog"
 description: "Fetch merged PRs between two commits, extract ```release-note``` blocks and bucket by /kind labels"
 inputs:
   token:
-    description: "GitHub token (usually ${{ secrets.GITHUB_TOKEN }})"
+    description: "GITHUB_TOKEN or a `repo` scoped Personal Access Token (PAT)"
     required: false
     default: {{ github.token }}
   owner:

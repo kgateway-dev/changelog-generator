@@ -12,11 +12,11 @@ import (
 
 func main() {
 	cmd := &cobra.Command{
-		Use:   "changelog-generator <token> <owner> <repo> <start-sha> <end-sha>",
+		Use:   "changelog-generator <token> <owner> <repo> <start-sha> <end-sha> <output-path>",
 		Short: "Generate a changelog between two commits",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			token, owner, repo, startSHA, endSHA := args[0], args[1], args[2], args[3], args[4]
+			token, owner, repo, startSHA, endSHA, outputPath := args[0], args[1], args[2], args[3], args[4], args[5]
 
 			ctx := context.Background()
 			client := github.NewClient(nil).WithAuthToken(token)
@@ -26,8 +26,11 @@ func main() {
 			if err != nil {
 				return fmt.Errorf("failed to generate changelog: %v", err)
 			}
+			if err := os.WriteFile(outputPath, []byte(changelog), 0644); err != nil {
+				return fmt.Errorf("failed to write changelog to %s: %v", outputPath, err)
+			}
+			fmt.Printf("::set-output name=changelog-path::%s\n", outputPath)
 
-			fmt.Println(changelog)
 			return nil
 		},
 	}

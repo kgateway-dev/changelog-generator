@@ -17,6 +17,13 @@ inputs:
   end-sha:
     description: "The ending commit SHA (inclusive)"
     required: true
+  output-path:
+    description: "The path to write the changelog to"
+    required: false
+    default: "CHANGELOG.md"
+outputs:
+  changelog-path:
+    description: "The path to the generated changelog file"
 runs:
   using: "docker"
   image: "Dockerfile"
@@ -26,3 +33,4 @@ runs:
     - ${{ inputs.repo }}
     - ${{ inputs.start-sha }}
     - ${{ inputs.end-sha }}
+    - ${{ inputs.output-path }}

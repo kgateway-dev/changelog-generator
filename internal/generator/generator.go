@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/google/go-github/v68/github"
@@ -77,7 +78,7 @@ func (g *Generator) getReferencedPRs(ctx context.Context, _ []*github.Commit) ([
 	var prs []*github.PullRequest
 
 	// Search for PRs referenced in commit messages
-	query := fmt.Sprintf("repo:%s/%s is:pr is:merged", g.owner, g.repo)
+	query := fmt.Sprintf(`repo:%s/%s is:pr is:merged label:"release-note","release-note-needed"`, g.owner, g.repo)
 	result, _, err := g.client.Search.Issues(ctx, query, &github.SearchOptions{
 		TextMatch: true,
 		ListOptions: github.ListOptions{
@@ -110,14 +111,41 @@ func (g *Generator) generateChangelog(prs []*github.PullRequest) string {
 		kind := g.getPRKind(pr)
 		buckets[kind] = append(buckets[kind], pr)
 	}
+	// sort the buckets by kind to ensure deterministic output
+	kinds := make([]string, 0, len(kindHeaders))
+	for kind := range kindHeaders {
+		kinds = append(kinds, kind)
+	}
+	sort.Strings(kinds)
 
-	// Print each bucket
-	for kind, header := range kindHeaders {
-		if prs, ok := buckets[kind]; ok && len(prs) > 0 {
-			changelog.WriteString(fmt.Sprintf("\n## %s\n\n", header))
-			for _, pr := range prs {
-				changelog.WriteString(fmt.Sprintf("- %s (#%d)\n", *pr.Title, *pr.Number))
+	// build the changelog
+	for _, kind := range kinds {
+		header := kindHeaders[kind]
+		prs := buckets[kind]
+		if len(prs) == 0 {
+			continue
+		}
+		changelog.WriteString(fmt.Sprintf("\n## %s\n\n", header))
+		for _, pr := range prs {
+			body := pr.GetBody()
+			if body == "" {
+				continue
 			}
+			// attempt to extract a release-note from the PR body
+			match := releaseNoteRE.FindStringSubmatch(body)
+			if len(match) < 2 {
+				// skip PRs that have the release-note label but no release-note body.
+				// TODO(tim): this shouldn't be possible with the labeler being a required
+				// check, but we'll check for it anyway in case users have manually added
+				// the label to a PR.
+				continue
+			}
+			note := match[1]
+			if note == "" {
+				// TODO(tim): we should probably log this as an error as this is unexpected
+				continue
+			}
+			changelog.WriteString(fmt.Sprintf("- %s (#%d)\n", note, pr.GetNumber()))
 		}
 	}
 
@@ -129,9 +157,9 @@ func (g *Generator) getPRKind(pr *github.PullRequest) string {
 	// Check labels first
 	for _, label := range pr.Labels {
 		switch *label.Name {
-		case "kind/new-feature":
+		case "kind/feature", "kind/new_feature":
 			return "new_feature"
-		case "kind/bug":
+		case "kind/fix", "kind/bug_fix":
 			return "bug_fix"
 		case "kind/breaking_change":
 			return "breaking_change"
@@ -142,20 +170,5 @@ func (g *Generator) getPRKind(pr *github.PullRequest) string {
 		}
 	}
 
-	// Fall back to title-based detection
-	title := strings.ToLower(*pr.Title)
-	switch {
-	case strings.Contains(title, "feat") || strings.Contains(title, "feature"):
-		return "new_feature"
-	case strings.Contains(title, "fix") || strings.Contains(title, "bug"):
-		return "bug_fix"
-	case strings.Contains(title, "break") || strings.Contains(title, "breaking"):
-		return "breaking_change"
-	case strings.Contains(title, "doc") || strings.Contains(title, "docs"):
-		return "documentation"
-	case strings.Contains(title, "perf") || strings.Contains(title, "performance"):
-		return "performance"
-	default:
-		return "other"
-	}
+	return "other"
 }

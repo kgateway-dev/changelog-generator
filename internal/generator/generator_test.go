@@ -51,7 +51,9 @@ func TestGenerateChangelog(t *testing.T) {
 				}},
 			}},
 			expectedChangelog: `
-## 🚀 Features
+# Changelog
+
+## Features
 
 - My note for PR42 (#42)
 `,
@@ -76,8 +78,10 @@ func TestGenerateChangelog(t *testing.T) {
 					Name: github.Ptr("irrelevant-label"),
 				}},
 			}},
-			expectedChangelog: "",
-			expectError:       false,
+			expectedChangelog: `
+# Changelog
+`,
+			expectError: false,
 		},
 		{
 			name:         "Valid/Multiple PRs with different kinds",
@@ -119,15 +123,17 @@ func TestGenerateChangelog(t *testing.T) {
 				},
 			},
 			expectedChangelog: `
-## 💥 Breaking Changes
+# Changelog
+
+## Breaking Changes
 
 - Removed old feature (#44)
 
-## 🐛 Bug Fixes
+## Bug Fixes
 
 - Fixed a bug (#43)
 
-## 🚀 Features
+## Features
 
 - Implement new feature (#42)
 `,

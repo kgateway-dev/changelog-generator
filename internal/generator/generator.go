@@ -15,11 +15,11 @@ var releaseNoteRE = regexp.MustCompile("(?s)```release-note\\s*(.*?)\\s*```")
 
 // Supported kinds for bucket headers
 var kindHeaders = map[string]string{
-	"new_feature":     "🚀 Features",
-	"bug_fix":         "🐛 Bug Fixes",
-	"breaking_change": "💥 Breaking Changes",
-	"documentation":   "📝 Documentation",
-	"performance":     "⚡ Performance Improvements",
+	"new_feature":     "## Features",
+	"bug_fix":         "## Bug Fixes",
+	"breaking_change": "## Breaking Changes",
+	"documentation":   "## Documentation",
+	"performance":     "## Performance Improvements",
 }
 
 // Generator handles changelog generation for a repository
@@ -119,13 +119,14 @@ func (g *Generator) generateChangelog(prs []*github.PullRequest) string {
 	sort.Strings(kinds)
 
 	// build the changelog
+	changelog.WriteString("# Changelog\n")
 	for _, kind := range kinds {
 		header := kindHeaders[kind]
 		prs := buckets[kind]
 		if len(prs) == 0 {
 			continue
 		}
-		changelog.WriteString(fmt.Sprintf("\n## %s\n\n", header))
+		changelog.WriteString(fmt.Sprintf("\n%s\n\n", header))
 		for _, pr := range prs {
 			body := pr.GetBody()
 			if body == "" {

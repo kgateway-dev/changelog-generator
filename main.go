@@ -16,9 +16,14 @@ func main() {
 	cmd := &cobra.Command{
 		Use:   "changelog-generator <token> <owner> <repo> <start-sha> <end-sha> <output-path>",
 		Short: "Generate a changelog between two commits",
-		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
+			if token == "" {
+				token = os.Getenv("GITHUB_TOKEN")
+			}
+			if token == "" {
+				return fmt.Errorf("GITHUB_TOKEN is not set")
+			}
 			client := github.NewClient(nil).WithAuthToken(token)
 
 			g := generator.New(client, owner, repo)
@@ -33,12 +38,16 @@ func main() {
 			return nil
 		},
 	}
-	cmd.Flags().StringVarP(&token, "token", "t", "", "GitHub token")
+	cmd.Flags().StringVarP(&token, "token", "t", "", "GitHub token (optional, defaults to GITHUB_TOKEN)")
 	cmd.Flags().StringVarP(&owner, "owner", "o", "", "GitHub owner")
 	cmd.Flags().StringVarP(&repo, "repo", "r", "", "GitHub repository")
 	cmd.Flags().StringVarP(&startSHA, "start-sha", "s", "", "Start commit SHA")
 	cmd.Flags().StringVarP(&endSHA, "end-sha", "e", "", "End commit SHA")
 	cmd.Flags().StringVarP(&outputPath, "output-path", "p", "", "Output path")
+	cmd.MarkFlagRequired("owner")
+	cmd.MarkFlagRequired("repo")
+	cmd.MarkFlagRequired("start-sha")
+	cmd.MarkFlagRequired("end-sha")
 
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
